@@ -1,0 +1,83 @@
+﻿<Window x:Class="CleaningRepo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CleaningRepo"
+        mc:Ignorable="d"
+        Title="Cleaning Repository" Width="400" Height="621.686">
+    <StackPanel >
+        <DockPanel>
+            <TextBlock Foreground="Black" FontFamily="Palatino Linotype" TextAlignment="Center" FontWeight="Bold" Margin="10, 30,10,10" FontSize="20" TextWrapping="Wrap" Width="300">Cleaning repository</TextBlock>
+            <Image Source="C:\Users\Jurga\Documents\Visual Studio 2017\Projects\CleaningRepo\CleaningRepo\clean.jpg" Height="80" Width="50" />
+        </DockPanel>
+        <UniformGrid Columns="1" Rows="3" Height="180" Background="#888888">
+            <UniformGrid Columns="2" Rows="1">
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" >
+                    Podaj ścieżkę repozytorium:</TextBlock>
+                <Button Name="Repository" HorizontalAlignment="Center" Width="80" Click="Repository_Click" Height="40">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Scieżka do repozytorium</TextBlock>
+                </Button>
+            </UniformGrid>
+            <UniformGrid Columns="2" Rows="1">
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White"  >
+                    Podaj ścieżkę wyszukiwanych programów:</TextBlock>
+                <Button Name="ProgramsToFind" Click="ProgramsToFind_Click" HorizontalAlignment="Center" Width="80" Height="40" >
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Ścieżka do programów</TextBlock>
+                </Button>
+            </UniformGrid>
+            <UniformGrid Columns="2" Rows="1" HorizontalAlignment="Center">
+                <Button Name="RunProgram" Click="RunProgram_Click" HorizontalAlignment="Left" Width="100" Margin="10">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Uruchom program</TextBlock>
+                </Button>
+                <Button Name="CloseProgram" Click="CloseProgram_Click" HorizontalAlignment="Left" Width="100" Margin="10">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Zamknij program</TextBlock>
+                </Button>
+            </UniformGrid>
+        </UniformGrid>
+        <UniformGrid Columns="2" Rows="1">
+        <ListView  Name="listViewFind">
+            <ListView.View>
+                <GridView>
+                    <GridView.ColumnHeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="11" FontWeight="Bold" Height="25"/>
+                        </DataTemplate>
+                    </GridView.ColumnHeaderTemplate>
+                    <GridView.Columns>
+                            <GridViewColumn Header="Programy do wyszukania:" Width="190"/>
+                        
+                    </GridView.Columns>
+                </GridView>
+            </ListView.View>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Padding" Value="5"/>
+                    
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+        <ListView Name="listViewUnused">
+            <ListView.View>
+                <GridView>
+                    <GridView.ColumnHeaderTemplate>
+                        <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="11" FontWeight="Bold" Height="25" />
+                        </DataTemplate>
+                    </GridView.ColumnHeaderTemplate>
+                    <GridView.Columns>
+                            <GridViewColumn Header="Lista nieużywanych programów:" Width="190" />
+                    </GridView.Columns>
+                </GridView>
+            </ListView.View>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Padding" Value="5"/>
+
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+            </UniformGrid>
+    </StackPanel>
+
+</Window>
