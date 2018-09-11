@@ -62,6 +62,7 @@ namespace CleaningRepo
             
             if (folder != null)
             {
+                CzyOkProg.Text = "OK!";
                 SearchDirs(folder, FilesToFind);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
     
@@ -76,6 +77,7 @@ namespace CleaningRepo
             string repositoryPath = ReadFile();
             if (repositoryPath != null)
             {
+                CzyOkRepo.Text = "OK!";
                 SearchDirs(repositoryPath, FilesFromRepository, false);
             }
 
@@ -154,7 +156,7 @@ namespace CleaningRepo
             try
             {
                 // robimy kopię z plików do wyszukania
-                unusedFiles = FilesToFind;
+                unusedFiles = new HashSet<string>(FilesToFind);
                 //dzielimy pliki z listy 'unusedFiles' na JCL i inne
                 DivideFiles(JCLFiles, NonJCLFiles);
                 //usuwamy z listy używane pliki
@@ -162,17 +164,26 @@ namespace CleaningRepo
 
                 listViewUnused.ItemsSource = DisplayResults(unusedFiles);
 
-                System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
-                //za[isywanie wyniku do pliku
-                if (!File.Exists("D:\\unusedFiles.txt"))
+                //zapisywanie wyniku do pliku
+
+                Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog()
                 {
-                    StreamWriter sw = File.CreateText("D:\\unusedFiles.txt");
+                    Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
+                    Title = "Zapisz plik"
+                };
+                saveFileDialog.ShowDialog();
+                if (saveFileDialog.FileName != "")
+                {
+                    StreamWriter sw = File.CreateText(saveFileDialog.FileName);
                     foreach (string file in unusedFiles)
+                    {
                         sw.WriteLine(file);
+                    }
+
                     sw.Close();
+
                 }
-                else
-                    System.Windows.MessageBox.Show("Katalog o podanej nazwie już istnieje!", "Uwaga!");
+                System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -181,7 +192,7 @@ namespace CleaningRepo
         }
         void DivideFiles(List<string> JCL, List<string> NonJCL)
         {
-            foreach (string file in unusedFiles)
+            foreach (string file in FilesFromRepository)
             {
                 if (file.Contains("JCL"))
                 {
@@ -194,15 +205,17 @@ namespace CleaningRepo
             }
         }
 
+        
         void FilterUnused(HashSet<string> filesToCheck, List<string> jclFiles, List<string> nonJclFiles)
         {
+            List<string> filesList = new List<string>(filesToCheck);
             foreach (string file in nonJclFiles)
             {
-                CheckNonJCL(file, nonJclFiles);
+                CheckNonJCL(file, filesList);
             }
             foreach (string file in jclFiles)
             {
-                CheckJCL(file, jclFiles);
+                CheckJCL(file, filesList);
             }
         }
 
