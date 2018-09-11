@@ -36,7 +36,7 @@ namespace CleaningRepo
         HashSet<string> unusedFiles = new HashSet<string>();
         List<string> JCLFiles = new List<string>();
         List<string> NonJCLFiles = new List<string>();
-
+        string foldersAdded = "";
 
         //pobieranie ścieżki do folderu
         public static string ReadFile()
@@ -55,15 +55,31 @@ namespace CleaningRepo
             else return null;
         }
 
+        private void Reset_Click(object sender, RoutedEventArgs e)
+        {
+            FilesToFind.Clear();
+            FilesFromRepository.Clear();
+            RemovedFiles.Clear();
+            unusedFiles.Clear();
+            JCLFiles.Clear();
+            NonJCLFiles.Clear();
+            foldersAdded = "";
+            CzyOkProg.Text = foldersAdded;
+            CzyOkRepo.Text = "";
+            listViewFind.ItemsSource = DisplayResults(FilesToFind);
+            listViewUnused.ItemsSource = DisplayResults(unusedFiles);
+        }
+
         private void ProgramsToFind_Click(object sender, RoutedEventArgs e)
         {
-            
+            CzyOkProg.FontSize = 10;
             string folder = ReadFile();
-            
+
             if (folder != null)
             {
-                CzyOkProg.Text = "OK!";
-                SearchDirs(folder, FilesToFind);
+                foldersAdded += new DirectoryInfo(folder).Name+"\n";
+                CzyOkProg.Text = foldersAdded;
+                SearchDirs(folder, FilesToFind, false);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
     
             }
@@ -77,7 +93,7 @@ namespace CleaningRepo
             string repositoryPath = ReadFile();
             if (repositoryPath != null)
             {
-                CzyOkRepo.Text = "OK!";
+                CzyOkRepo.Text = repositoryPath;
                 SearchDirs(repositoryPath, FilesFromRepository, false);
             }
 
@@ -99,7 +115,7 @@ namespace CleaningRepo
                         if (ignoreOnline)
                         {
                             string tmpF = Path.GetFileName(f);
-                            if (tmpF[2] == '1' || tmpF[2] == '2')
+                            if (tmpF.Length < 2 || tmpF[2] == '1' || tmpF[2] == '2')
                             {
                                 Console.WriteLine("Ignored Online: " + tmpF);
                                 continue;
@@ -119,7 +135,7 @@ namespace CleaningRepo
                         if (ignoreOnline)
                         {
                             string tmpF = System.IO.Path.GetFileName(f);
-                            if (tmpF[2] == '1' || tmpF[2] == '2')
+                            if (tmpF.Length < 2 || tmpF[2] == '1' || tmpF[2] == '2')
                             {
                                 Console.WriteLine("Ignored Online: " + tmpF);
                                 continue;
@@ -228,7 +244,7 @@ namespace CleaningRepo
             {
                 ////pobieranie nazw zmiennych do których mogą byc przypisane programy
                 string[] lines = File.ReadAllLines(file);
-                VarsNames = GetNameVariable(lines);
+                //VarsNames = GetNameVariable(lines);
                 foreach (string line in lines)
                 {
                     if (!(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID")))
@@ -259,7 +275,7 @@ namespace CleaningRepo
             {
                 ////pobieranie nazw zmiennych do których mogą byc przypisane programy
                 string[] lines = File.ReadAllLines(file);
-                VarsNames = GetNameVariable(lines);
+                //VarsNames = GetNameVariable(lines);
                 foreach (string line in lines)
                 {
                     if (!line.Contains("//*"))
@@ -286,18 +302,19 @@ namespace CleaningRepo
             Dictionary<string, string> NamesOfVariables = new Dictionary<string, string>();
             foreach (string line in lines)
             {
-                if (line.Contains("value"))
+                if (line.Length > 7 && line.Contains("value"))
                 {
                     //wyszukiwanie nazwy zmiennej
+
                     string patternKey = @"[A-Z]+(-[A-Z]+)+";
-                    string NameVariableKey = Regex.Match(line, patternKey).ToString();
+                    string NameVariableKey = Regex.Match(line, patternKey).ToString() ?? null;
                     //wyszukiwanie wartości zmiennej, czyli nazwy wywoływanego programu
-                    string patternValue = "\".*\"";
+                    string patternValue = "\".......\"";
                     string NameVariableValue1 = Regex.Match(line, patternValue).ToString();
                     string NameVariableValue = NameVariableValue1.Substring(1, NameVariableValue1.Length - 2);
-                    ////sprawdzanie czy wartość zmiennej może być nazwą programu (zwykle to jest 7 znaków) i dodanie zmiennej wywołującej program do listy
-                    if (NameVariableValue.Length == 7)
-                        NamesOfVariables.Add(NameVariableKey, NameVariableValue);
+                    //    ////sprawdzanie czy wartość zmiennej może być nazwą programu (zwykle to jest 7 znaków) i dodanie zmiennej wywołującej program do listy
+                    //    if (NameVariableValue.Length == 7)
+                    //        NamesOfVariables.Add(NameVariableKey, NameVariableValue);
                 }
             }
             return NamesOfVariables;
