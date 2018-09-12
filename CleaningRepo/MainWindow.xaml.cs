@@ -1,10 +1,12 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,6 +27,8 @@ namespace CleaningRepo
     /// </summary>
     public partial class MainWindow : Window
     {
+        BackgroundWorker worker;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -68,11 +72,12 @@ namespace CleaningRepo
             CzyOkRepo.Text = "";
             listViewFind.ItemsSource = DisplayResults(FilesToFind);
             listViewUnused.ItemsSource = DisplayResults(unusedFiles);
+            progressBar.Value = 0;
+            StatusTextBox.Text = "";
         }
 
         private void ProgramsToFind_Click(object sender, RoutedEventArgs e)
         {
-            CzyOkProg.FontSize = 10;
             string folder = ReadFile();
 
             if (folder != null)
@@ -81,7 +86,7 @@ namespace CleaningRepo
                 CzyOkProg.Text = foldersAdded;
                 SearchDirs(folder, FilesToFind, false);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
-    
+  
             }
 
             if (FilesToFind == null)
@@ -152,9 +157,6 @@ namespace CleaningRepo
         }
 
 
- 
-  
-
         HashSet<string> DisplayResults(HashSet<string> results)
         {
             HashSet<string> lista = new HashSet<string>();
@@ -171,39 +173,48 @@ namespace CleaningRepo
         {
             try
             {
+                //blokujemy przyciski
+                Repository.IsEnabled = false;
+                ProgramsToFind.IsEnabled = false;
+                RunProgram.IsEnabled = false;
+                Reset.IsEnabled = false;
+                CloseProgram.IsEnabled = false;
                 // robimy kopię z plików do wyszukania
                 unusedFiles = new HashSet<string>(FilesToFind);
                 //dzielimy pliki z listy 'unusedFiles' na JCL i inne
                 DivideFiles(JCLFiles, NonJCLFiles);
+                ProgressBarRun();
                 //usuwamy z listy używane pliki
                 FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
 
                 listViewUnused.ItemsSource = DisplayResults(unusedFiles);
 
-                //zapisywanie wyniku do pliku
-
-                Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog()
-                {
-                    Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
-                    Title = "Zapisz plik"
-                };
-                saveFileDialog.ShowDialog();
-                if (saveFileDialog.FileName != "")
-                {
-                    StreamWriter sw = File.CreateText(saveFileDialog.FileName);
-                    foreach (string file in unusedFiles)
-                    {
-                        sw.WriteLine(file);
-                    }
-
-                    sw.Close();
-
-                }
-                System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show("Wystąpił błąd:" + ex, "Uwaga!");
+            }
+        }
+
+        void SaveFiles()
+        {
+            Thread.Sleep(200);
+            Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog()
+            {
+                Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
+                Title = "Zapisz plik"
+            };
+            saveFileDialog.ShowDialog();
+            if (saveFileDialog.FileName != "")
+            {
+                StreamWriter sw = File.CreateText(saveFileDialog.FileName);
+                foreach (string file in unusedFiles)
+                {
+                    sw.WriteLine(file);
+                }
+
+                sw.Close();
+
             }
         }
         void DivideFiles(List<string> JCL, List<string> NonJCL)
@@ -221,7 +232,52 @@ namespace CleaningRepo
             }
         }
 
-        
+        void ProgressBarRun()
+        {
+            worker = new BackgroundWorker();
+            worker.DoWork += worker_DoWork;
+            worker.ProgressChanged += worker_ProgressChanged;
+            worker.RunWorkerCompleted += worker_RunWorkerCompleted;
+            worker.WorkerReportsProgress = true;
+            worker.RunWorkerAsync();
+        }
+
+        void worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+            //worker.ReportProgress(0);
+            for (int i = 1; i <= FilesFromRepository.Count; ++i)
+            {
+                Thread.Sleep(200);
+                worker.ReportProgress(i);
+            }
+            //worker.ReportProgress(100);
+        }
+
+        void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            double percent = (e.ProgressPercentage * 100) / FilesFromRepository.Count;
+
+            progressBar.Value = Math.Round(percent, 0);
+
+            StatusTextBox.Text = Math.Round(percent, 0) + "% percent completed";
+        }
+
+        void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            SaveFiles();
+            //potwierdzenie zakończenia procesu
+            System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
+            //zwalniamy przyciski
+            Repository.IsEnabled = true;
+            ProgramsToFind.IsEnabled = true;
+            RunProgram.IsEnabled = true;
+            Reset.IsEnabled = true;
+            CloseProgram.IsEnabled = true;
+
+
+        }
+
         void FilterUnused(HashSet<string> filesToCheck, List<string> jclFiles, List<string> nonJclFiles)
         {
             List<string> filesList = new List<string>(filesToCheck);

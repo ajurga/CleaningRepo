@@ -4,13 +4,13 @@
              xmlns:local="clr-namespace:CleaningRepo"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <LinearGradientBrush x:Key="GrayBlueGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <!--<LinearGradientBrush x:Key="GrayBlueGradientBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#DDDDDD" Offset="0" />
             <GradientStop Color="#999999" Offset="0.5" />
             <GradientStop Color="#DDDDDD" Offset="1" />
-        </LinearGradientBrush>
+        </LinearGradientBrush>  -->
         <Style TargetType="{x:Type Button}">
-            <Setter Property="Background" Value="{StaticResource GrayBlueGradientBrush}" />
+            <!--<Setter Property="Background" Value="{StaticResource GrayBlueGradientBrush}" />-->
             <Setter Property="Height" Value="40" />
             <Setter Property="Margin" Value="10" />
         </Style>
