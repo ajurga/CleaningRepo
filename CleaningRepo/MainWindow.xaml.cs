@@ -17,6 +17,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 //using System.Windows.Shapes;
 
 
@@ -257,7 +258,7 @@ namespace CleaningRepo
                 worker.ReportProgress(i);
             }*/
 
-            int counter = 0;
+           /* int counter = 0;
             List<string> filesList = new List<string>(unusedFiles);
             foreach (string file in NonJCLFiles)
             {
@@ -270,9 +271,9 @@ namespace CleaningRepo
                 counter++;
                 percent = (counter * 100) / FilesFromRepository.Count;
                 CheckJCL(file, filesList);
-            }
+            }*/
 
-               // FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
+             FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
             worker.ReportProgress(percent);
         }
 
@@ -305,6 +306,7 @@ namespace CleaningRepo
             }
         }
 
+        
 
 
         void FilterUnused(HashSet<string> filesToCheck, List<string> jclFiles, List<string> nonJclFiles)
@@ -316,14 +318,17 @@ namespace CleaningRepo
             {
                 counter++;
                 percent = (counter * 100) / FilesFromRepository.Count;
-                progressBar.Value = percent;
+
+                StatusLabel.Content = percent.ToString();
+                StatusLabel.Refresh();
                 CheckNonJCL(file, filesList);
             }
             foreach (string file in jclFiles)
             {
                 counter++;
                 percent = (counter * 100) / FilesFromRepository.Count;
-                progressBar.Value = percent;
+                StatusLabel.Content = percent.ToString();
+                StatusLabel.Refresh();
                 CheckJCL(file, filesList);
 
             }
@@ -418,6 +423,17 @@ namespace CleaningRepo
         {
             
             this.Close();
+        }
+    }
+    public static class ExtensionMethods
+    {
+        private static Action EmptyDelegate = delegate () { };
+
+
+        public static void Refresh(this UIElement uiElement)
+
+        {
+            uiElement.Dispatcher.Invoke(DispatcherPriority.Render, EmptyDelegate);
         }
     }
 }
