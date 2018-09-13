@@ -34,6 +34,7 @@ namespace CleaningRepo
             InitializeComponent();
         }
 
+
         HashSet<string> FilesToFind = new HashSet<string>();
         HashSet<string> FilesFromRepository = new HashSet<string>();
         HashSet<string> RemovedFiles = new HashSet<string>();
@@ -41,6 +42,10 @@ namespace CleaningRepo
         List<string> JCLFiles = new List<string>();
         List<string> NonJCLFiles = new List<string>();
         string foldersAdded = "";
+        
+        int percent;
+
+      
 
         //pobieranie ścieżki do folderu
         public static string ReadFile()
@@ -74,6 +79,7 @@ namespace CleaningRepo
             listViewUnused.ItemsSource = DisplayResults(unusedFiles);
             progressBar.Value = 0;
             StatusTextBox.Text = "";
+            percent = 0;
         }
 
         private void ProgramsToFind_Click(object sender, RoutedEventArgs e)
@@ -185,9 +191,9 @@ namespace CleaningRepo
                 DivideFiles(JCLFiles, NonJCLFiles);
                 ProgressBarRun();
                 //usuwamy z listy używane pliki
-                FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
+                //FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
 
-                listViewUnused.ItemsSource = DisplayResults(unusedFiles);
+                //listViewUnused.ItemsSource = DisplayResults(unusedFiles);
 
             }
             catch (Exception ex)
@@ -235,61 +241,95 @@ namespace CleaningRepo
         void ProgressBarRun()
         {
             worker = new BackgroundWorker();
-            worker.DoWork += worker_DoWork;
-            worker.ProgressChanged += worker_ProgressChanged;
-            worker.RunWorkerCompleted += worker_RunWorkerCompleted;
             worker.WorkerReportsProgress = true;
+            worker.DoWork += new DoWorkEventHandler(worker_DoWork);
+            worker.ProgressChanged += new ProgressChangedEventHandler(worker_ProgressChanged);
+            worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(worker_RunWorkerCompleted);
             worker.RunWorkerAsync();
         }
 
         void worker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-            //worker.ReportProgress(0);
-            for (int i = 1; i <= FilesFromRepository.Count; ++i)
+            /*for (int i = 1; i <= FilesFromRepository.Count; ++i)
             {
-                Thread.Sleep(200);
+                //Thread.Sleep(200);
                 worker.ReportProgress(i);
+            }*/
+
+            int counter = 0;
+            List<string> filesList = new List<string>(unusedFiles);
+            foreach (string file in NonJCLFiles)
+            {
+                counter++;
+                percent = (counter * 100) / FilesFromRepository.Count;
+                CheckNonJCL(file, filesList);
             }
-            //worker.ReportProgress(100);
+            foreach (string file in JCLFiles)
+            {
+                counter++;
+                percent = (counter * 100) / FilesFromRepository.Count;
+                CheckJCL(file, filesList);
+            }
+
+               // FilterUnused(unusedFiles, JCLFiles, NonJCLFiles);
+            worker.ReportProgress(percent);
         }
 
         void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            double percent = (e.ProgressPercentage * 100) / FilesFromRepository.Count;
+            //double percent = (e.ProgressPercentage * 100) / FilesFromRepository.Count;
 
-            progressBar.Value = Math.Round(percent, 0);
+            //progressBar.Value = Math.Round(percent, 0);
 
-            StatusTextBox.Text = Math.Round(percent, 0) + "% percent completed";
+            //StatusTextBox.Text = Math.Round(percent, 0) + "% percent completed, counter: " + counter;
+            progressBar.Value = e.ProgressPercentage;
+            StatusTextBox.Text = "Processing......" + progressBar.Value.ToString() + "%";
+
         }
 
         void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            SaveFiles();
-            //potwierdzenie zakończenia procesu
-            System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
-            //zwalniamy przyciski
-            Repository.IsEnabled = true;
-            ProgramsToFind.IsEnabled = true;
-            RunProgram.IsEnabled = true;
-            Reset.IsEnabled = true;
-            CloseProgram.IsEnabled = true;
-
-
+            if (e.Error == null)
+            {
+                listViewUnused.ItemsSource = DisplayResults(unusedFiles);
+                SaveFiles();
+                //potwierdzenie zakończenia procesu
+                System.Windows.MessageBox.Show("Przeszukiwanie zakończone", "Informacja", MessageBoxButton.OK, MessageBoxImage.Information);
+                //zwalniamy przyciski
+                Repository.IsEnabled = true;
+                ProgramsToFind.IsEnabled = true;
+                RunProgram.IsEnabled = true;
+                Reset.IsEnabled = true;
+                CloseProgram.IsEnabled = true;
+            }
         }
+
+
 
         void FilterUnused(HashSet<string> filesToCheck, List<string> jclFiles, List<string> nonJclFiles)
         {
+            
+            int counter = 0;
             List<string> filesList = new List<string>(filesToCheck);
             foreach (string file in nonJclFiles)
             {
+                counter++;
+                percent = (counter * 100) / FilesFromRepository.Count;
+                progressBar.Value = percent;
                 CheckNonJCL(file, filesList);
             }
             foreach (string file in jclFiles)
             {
+                counter++;
+                percent = (counter * 100) / FilesFromRepository.Count;
+                progressBar.Value = percent;
                 CheckJCL(file, filesList);
+
             }
+            
         }
+        
 
         //Usuwa z listy nieużywane programy z nie JCLowych
         void CheckNonJCL(string file, List<string> toCheck)
@@ -309,7 +349,6 @@ namespace CleaningRepo
                         {
                             if (line.Contains(Path.GetFileName(toCheck[i])))
                             {
-                                Console.WriteLine("{0} found in line {1} in file {2}", Path.GetFileName(toCheck[i]), line, Path.GetFileName(file));
                                 unusedFiles.Remove(toCheck[i]);
                             }
                         }
@@ -340,7 +379,6 @@ namespace CleaningRepo
                         {
                             if (line.Contains(System.IO.Path.GetFileName(toCheck[i])))
                             {
-                                Console.WriteLine("{0} found in line {1} in file {2}", Path.GetFileName(toCheck[i]), line, Path.GetFileName(file));
                                 unusedFiles.Remove(toCheck[i]);
                             }
                         }
