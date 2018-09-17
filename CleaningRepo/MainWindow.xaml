@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CleaningRepo"
         mc:Ignorable="d"
-        Title="Cleaning Repository" Width="400" >
+        Title="Cleaning Repository" Width="400" Height="652" >
 
     <StackPanel Margin="0,0,0,1" >
         <DockPanel>
@@ -13,12 +13,12 @@
             <Image Source="clean.jpg"/>
 
         </DockPanel>
-        <UniformGrid Columns="1" Rows="3" Height="180" Background="#99CCCC">
+        <UniformGrid Columns="1" Rows="4" Height="240" Background="#99CCCC">
             <UniformGrid Columns="3" Rows="1">
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" >
                     Podaj ścieżkę repozytorium:</TextBlock>
                 <Button Name="Repository" HorizontalAlignment="Center" Width="80" Click="Repository_Click" Height="40">
-                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Scieżka do repozytorium</TextBlock>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Wybierz folder</TextBlock>
                 </Button>
                 <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="14" Foreground="Green" Name="CzyOkRepo"></TextBlock>
             </UniformGrid>
@@ -26,21 +26,34 @@
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White"  >
                     Podaj ścieżkę wyszukiwanych programów:</TextBlock>
                 <Button Name="ProgramsToFind" Click="ProgramsToFind_Click" HorizontalAlignment="Center" Width="80" Height="40" >
-                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Ścieżka do programów</TextBlock>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Dodaj folder</TextBlock>
                 </Button>
                 <ScrollViewer>
                 <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Green" Name="CzyOkProg"></TextBlock>
                 </ScrollViewer>
             </UniformGrid>
-            <UniformGrid Columns="3" Rows="1" HorizontalAlignment="Center" Width="400">
-                <Button Name="RunProgram" Click="RunProgram_Click" HorizontalAlignment="Left" Width="100" Margin="10">
-                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center" FontWeight="Bold" Foreground="Green">Uruchom program</TextBlock>
+            <UniformGrid Columns="3" Rows="1">
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White"  >
+                    Lista wykluczonych Transakcji/JCL</TextBlock>
+                <Button Name="AddExcludedFiles" Click="AddExcludedFiles_Click" HorizontalAlignment="Center" Width="80" Height="40" >
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Dodaj plik</TextBlock>
                 </Button>
-                <Button Name="Reset" Click="Reset_Click" HorizontalAlignment="Center" Width="100">
+                <ScrollViewer>
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Green" Name="ExcludedSources"></TextBlock>
+                </ScrollViewer>
+            </UniformGrid>
+            <UniformGrid Columns="4" Rows="1" HorizontalAlignment="Center" Width="400">
+                <Button Name="RunProgram" Click="RunProgram_Click" HorizontalAlignment="Left" Width="80" Margin="10">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center" FontWeight="Bold" Foreground="Green">Run</TextBlock>
+                </Button>
+                <Button Name="Reset" Click="Reset_Click" HorizontalAlignment="Center" Width="80">
                     <TextBlock TextWrapping="Wrap" FontSize="11" FontWeight="Bold"> Reset</TextBlock>
                 </Button>
-                <Button Name="CloseProgram" Click="CloseProgram_Click" HorizontalAlignment="Right" Width="100" Margin="10">
-                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Right" FontWeight="Bold" Foreground="Red">Zamknij program</TextBlock>
+                <Button Name="Clean" Click="Clean_Click" HorizontalAlignment="Center" Width="80">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" FontWeight="Bold"> Clean</TextBlock>
+                </Button>
+                <Button Name="CloseProgram" Click="CloseProgram_Click" HorizontalAlignment="Right" Width="80" Margin="10">
+                    <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Right" FontWeight="Bold" Foreground="Red">Close</TextBlock>
                 </Button>
             </UniformGrid>
             
@@ -49,8 +62,6 @@
         
         <StackPanel Background="#99CCCC">
             <ProgressBar Width="300" Height="20" Margin="0,10" Name="progressBar" />
-            <TextBlock x:Name="StatusTextBox" Height="20" TextAlignment="Center" />
-            <Label Name="StatusLabel" Height="20" HorizontalAlignment="Center" Width="100"/>
         </StackPanel>
         
         <ScrollViewer>

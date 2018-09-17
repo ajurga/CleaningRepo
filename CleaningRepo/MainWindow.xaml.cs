@@ -1,22 +1,10 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Threading;
 //using System.Windows.Shapes;
 
@@ -28,8 +16,6 @@ namespace CleaningRepo
     /// </summary>
     public partial class MainWindow : Window
     {
-        BackgroundWorker worker;
-
         public MainWindow()
         {
             InitializeComponent();
@@ -40,14 +26,13 @@ namespace CleaningRepo
         HashSet<string> FilesFromRepository = new HashSet<string>();
         HashSet<string> RemovedFiles = new HashSet<string>();
         HashSet<string> unusedFiles = new HashSet<string>();
-        List<string> JCLFiles = new List<string>();
-        List<string> NonJCLFiles = new List<string>();
+        HashSet<string> excludedFiles = new HashSet<string>();
         string foldersAdded = "";
         int counter = 0;
         int filesPerThread = 10;
 
         //pobieranie ścieżki do folderu
-        public static string ReadFile()
+        public static string ReadFilesFromFolder()
         {
             //dostęp do ścieżki plików
             var folderBrowserDialog = new FolderBrowserDialog()
@@ -65,24 +50,28 @@ namespace CleaningRepo
 
         private void Reset_Click(object sender, RoutedEventArgs e)
         {
+            Repository.IsEnabled = true;
+            ProgramsToFind.IsEnabled = true;
+            RunProgram.IsEnabled = true;
+            AddExcludedFiles.IsEnabled = true;
+            Clean.IsEnabled = false;
+            ExcludedSources.Text = "";
+            counter = 0;
             FilesToFind.Clear();
             FilesFromRepository.Clear();
             RemovedFiles.Clear();
             unusedFiles.Clear();
-            JCLFiles.Clear();
-            NonJCLFiles.Clear();
-            foldersAdded = "";
+            foldersAdded = null;
             CzyOkProg.Text = foldersAdded;
             CzyOkRepo.Text = "";
             listViewFind.ItemsSource = DisplayResults(FilesToFind);
             listViewUnused.ItemsSource = DisplayResults(unusedFiles);
             progressBar.Value = 0;
-            StatusTextBox.Text = "";
         }
 
         private void ProgramsToFind_Click(object sender, RoutedEventArgs e)
         {
-            string folder = ReadFile();
+            string folder = ReadFilesFromFolder();
 
             if (folder != null)
             {
@@ -90,16 +79,40 @@ namespace CleaningRepo
                 CzyOkProg.Text = foldersAdded;
                 SearchDirs(folder, FilesToFind, false);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
-
             }
 
             if (FilesToFind == null)
                 System.Windows.MessageBox.Show("Lista plików do sprawdzenia jest pusta", "Uwaga!");
         }
 
+        private void Clean_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog()
+            {
+                ShowNewFolderButton = false
+            };
+            DialogResult path = folderBrowserDialog.ShowDialog();
+            if (path == System.Windows.Forms.DialogResult.OK)
+            {
+                string folderName = folderBrowserDialog.SelectedPath;
+                foreach (string s in unusedFiles)
+                {
+                    string targetFolder = folderName+"\\"+ Path.GetFileName(Path.GetDirectoryName(s));
+
+                    if (!System.IO.Directory.Exists(targetFolder))
+                    {
+                        System.IO.Directory.CreateDirectory(targetFolder);
+                    }
+                    System.IO.File.Copy(s, targetFolder + "\\" + Path.GetFileName(s), false);
+
+                }
+            }
+        }
+
+
         private void Repository_Click(object sender, RoutedEventArgs e)
         {
-            string repositoryPath = ReadFile();
+            string repositoryPath = ReadFilesFromFolder();
             if (repositoryPath != null)
             {
                 CzyOkRepo.Text = repositoryPath;
@@ -118,7 +131,6 @@ namespace CleaningRepo
                 //jeżeli są podkatalogi to idzie tu:
                 foreach (string d in Directory.GetDirectories(dirToSearch))
                 {
-
                     foreach (string f in Directory.GetFiles(d))
                     {
                         if (ignoreOnline)
@@ -138,7 +150,6 @@ namespace CleaningRepo
                 //jeżeli nie ma podkatalogów to bierze pliki ze ścieżki
                 if (ListOfFile.Count == 0)
                 {
-
                     foreach (string f in Directory.GetFiles(dirToSearch))
                     {
                         if (ignoreOnline)
@@ -160,47 +171,46 @@ namespace CleaningRepo
             }
         }
 
-
-        HashSet<string> DisplayResults(HashSet<string> results)
+        private void AddExcludedFiles_Click(object sender, RoutedEventArgs e)
         {
-            HashSet<string> lista = new HashSet<string>();
-            foreach (string s in results)
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
             {
-                lista.Add(Path.GetFileName(s));
+                ExcludedSources.Text += Path.GetFileName(openFileDialog.FileName) + "\n";
+                foreach (string s in File.ReadLines(openFileDialog.FileName))
+                {
+                    string matched = Regex.Match(s, "[A-Z][A-Z][1-2]C...").Value;
+                    if (matched != null)
+                    {
+                        excludedFiles.Add(matched);
+                    }
+                    matched = Regex.Match(s, "[A-Z][A-Z]J[A-Z]...").Value;
+                    if (matched != null)
+                        excludedFiles.Add(matched);
+                }
             }
-            return lista;
         }
-
-
 
         private void RunProgram_Click(object sender, RoutedEventArgs e)
         {
+            Repository.IsEnabled = false;
+            ProgramsToFind.IsEnabled = false;
+            RunProgram.IsEnabled = false;
+            AddExcludedFiles.IsEnabled = false;
+            Clean.IsEnabled = true;
             try
             {
                 // robimy kopię z plików do wyszukania
                 unusedFiles = new HashSet<string>(FilesToFind);
                 //usuwamy z listy używane pliki
-                Thread[] threads = new Thread[4];
                 while (counter < FilesFromRepository.Count)
                 {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        threads[i] = new Thread(() =>
-                        {
-                            FilterUnused();
-                            counter += filesPerThread;
-                        });
-                        threads[i].Start();
-                    }
-                    foreach (Thread t in threads)
-                    {
-                        t.Join();
-                        progressBar.Dispatcher.Invoke(() => progressBar.Value = 100 * counter / FilesFromRepository.Count, DispatcherPriority.Background);
-                    }
+                    FilterUnused(counter, (counter + filesPerThread < FilesFromRepository.Count ? counter + filesPerThread : FilesFromRepository.Count));
+                    counter += filesPerThread;
+                    progressBar.Dispatcher.Invoke(() => progressBar.Value = 100 * counter / FilesFromRepository.Count, DispatcherPriority.Background);
                 }
                 listViewUnused.ItemsSource = DisplayResults(unusedFiles);
                 SaveFiles();
-
             }
             catch (Exception ex)
             {
@@ -210,7 +220,6 @@ namespace CleaningRepo
 
         void SaveFiles()
         {
-            Thread.Sleep(200);
             Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog()
             {
                 Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
@@ -229,53 +238,43 @@ namespace CleaningRepo
 
             }
         }
-        void DivideFiles(List<string> JCL, List<string> NonJCL)
+
+        HashSet<string> DisplayResults(HashSet<string> results)
         {
-            foreach (string file in FilesFromRepository)
+            HashSet<string> lista = new HashSet<string>();
+            foreach (string s in results)
             {
-                if (file.Contains("JCL"))
-                {
-                    JCL.Add(file);
-                }
-                else
-                {
-                    NonJCL.Add(file);
-                }
+                lista.Add(Path.GetFileName(s));
             }
+            return lista;
         }
 
-        void FilterUnused()
+        void FilterUnused(int start, int end)
         {
+
             List<string> filesList = new List<string>(FilesToFind);
             List<string> filesFromRepoList = new List<string>(FilesFromRepository);
-            int counter = 0;
-            for (int i = counter; i< (counter+filesPerThread<FilesFromRepository.Count ? counter+FilesFromRepository.Count : FilesFromRepository.Count); i++)
+            for (int i = start; i < end; i++)
             {
-                if (filesFromRepoList[i].Contains("JCL"))
+                if (!excludedFiles.Contains(Path.GetFileName(filesFromRepoList[i])))
                 {
-                    CheckJCL(filesFromRepoList[i], filesList);
-                }
-                else
-                {
-                    CheckNonJCL(filesFromRepoList[i], filesList);
+                    bool isJCL = filesFromRepoList[i].Contains("JCL");
+                    CheckFile(filesFromRepoList[i], filesList, isJCL);
                 }
             }
         }
 
 
-        //Usuwa z listy nieużywane programy z nie JCLowych
-        void CheckNonJCL(string file, List<string> toCheck)
+        void CheckFile(string file, List<string> toCheck, bool isJCL)
         {
             HashSet<string> foundProgs = new HashSet<string>();
-            Dictionary<string, string> VarsNames;
             try
             {
-                ////pobieranie nazw zmiennych do których mogą byc przypisane programy
                 string[] lines = File.ReadAllLines(file);
-                //VarsNames = GetNameVariable(lines);
                 foreach (string line in lines)
                 {
-                    if (!(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID")))
+                    bool verifyIfLineHasToBeChecked = isJCL ? !(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID")) : !(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID"));
+                    if (verifyIfLineHasToBeChecked)
                     {
                         for (int i = toCheck.Count - 1; i > 0; i--)
                         {
@@ -293,74 +292,32 @@ namespace CleaningRepo
             }
         }
 
-        //Usuwa z listy nieużywane programy z nie JCLowych
-        void CheckJCL(string file, List<string> toCheck)
-        {
-            HashSet<string> foundProgs = new HashSet<string>();
-            Dictionary<string, string> VarsNames;
-            try
-            {
-                ////pobieranie nazw zmiennych do których mogą byc przypisane programy
-                string[] lines = File.ReadAllLines(file);
-                //VarsNames = GetNameVariable(lines);
-                foreach (string line in lines)
-                {
-                    if (!line.Contains("//*"))
-                    {
-                        for (int i = toCheck.Count - 1; i > 0; i--)
-                        {
-                            if (line.Contains(System.IO.Path.GetFileName(toCheck[i])))
-                            {
-                                unusedFiles.Remove(toCheck[i]);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (System.Exception e)
-            {
-                throw e;
-            }
-        }
+        //Dictionary<string, string> GetNameVariable(string[] lines)
+        //{
+        //    Dictionary<string, string> NamesOfVariables = new Dictionary<string, string>();
+        //    foreach (string line in lines)
+        //    {
+        //        if (line.Length > 7 && line.Contains("value"))
+        //        {
+        //            //wyszukiwanie nazwy zmiennej
 
-        Dictionary<string, string> GetNameVariable(string[] lines)
-        {
-            Dictionary<string, string> NamesOfVariables = new Dictionary<string, string>();
-            foreach (string line in lines)
-            {
-                if (line.Length > 7 && line.Contains("value"))
-                {
-                    //wyszukiwanie nazwy zmiennej
-
-                    string patternKey = @"[A-Z]+(-[A-Z]+)+";
-                    string NameVariableKey = Regex.Match(line, patternKey).ToString() ?? null;
-                    //wyszukiwanie wartości zmiennej, czyli nazwy wywoływanego programu
-                    string patternValue = "\".......\"";
-                    string NameVariableValue1 = Regex.Match(line, patternValue).ToString();
-                    string NameVariableValue = NameVariableValue1.Substring(1, NameVariableValue1.Length - 2);
-                    //    ////sprawdzanie czy wartość zmiennej może być nazwą programu (zwykle to jest 7 znaków) i dodanie zmiennej wywołującej program do listy
-                    //    if (NameVariableValue.Length == 7)
-                    //        NamesOfVariables.Add(NameVariableKey, NameVariableValue);
-                }
-            }
-            return NamesOfVariables;
-        }
+        //            string patternKey = @"[A-Z]+(-[A-Z]+)+";
+        //            string NameVariableKey = Regex.Match(line, patternKey).ToString() ?? null;
+        //            //wyszukiwanie wartości zmiennej, czyli nazwy wywoływanego programu
+        //            string patternValue = "\".......\"";
+        //            string NameVariableValue1 = Regex.Match(line, patternValue).ToString();
+        //            string NameVariableValue = NameVariableValue1.Substring(1, NameVariableValue1.Length - 2);
+        //            //    ////sprawdzanie czy wartość zmiennej może być nazwą programu (zwykle to jest 7 znaków) i dodanie zmiennej wywołującej program do listy
+        //            //    if (NameVariableValue.Length == 7)
+        //            //        NamesOfVariables.Add(NameVariableKey, NameVariableValue);
+        //        }
+        //    }
+        //    return NamesOfVariables;
+        //}
 
         private void CloseProgram_Click(object sender, RoutedEventArgs e)
         {
-
             this.Close();
-        }
-    }
-    public static class ExtensionMethods
-    {
-        private static Action EmptyDelegate = delegate () { };
-
-
-        public static void Refresh(this UIElement uiElement)
-
-        {
-            uiElement.Dispatcher.Invoke(DispatcherPriority.Render, EmptyDelegate);
         }
     }
 }
