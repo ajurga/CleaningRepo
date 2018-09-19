@@ -103,7 +103,7 @@ namespace CleaningRepo
                     {
                         System.IO.Directory.CreateDirectory(targetFolder);
                     }
-                    System.IO.File.Copy(s, targetFolder + "\\" + Path.GetFileName(s), false);
+                    System.IO.File.Move(s, targetFolder + "\\" + Path.GetFileName(s));
 
                 }
             }
@@ -210,7 +210,7 @@ namespace CleaningRepo
                     progressBar.Dispatcher.Invoke(() => progressBar.Value = 100 * counter / FilesFromRepository.Count, DispatcherPriority.Background);
                 }
                 listViewUnused.ItemsSource = DisplayResults(unusedFiles);
-                SaveFiles();
+                SaveLog();
             }
             catch (Exception ex)
             {
@@ -218,7 +218,7 @@ namespace CleaningRepo
             }
         }
 
-        void SaveFiles()
+        void SaveLog()
         {
             Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog()
             {

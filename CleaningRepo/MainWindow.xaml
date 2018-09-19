@@ -49,7 +49,7 @@
                 <Button Name="Reset" Click="Reset_Click" HorizontalAlignment="Center" Width="80">
                     <TextBlock TextWrapping="Wrap" FontSize="11" FontWeight="Bold"> Reset</TextBlock>
                 </Button>
-                <Button Name="Clean" Click="Clean_Click" HorizontalAlignment="Center" Width="80">
+                <Button Name="Clean" Click="Clean_Click" HorizontalAlignment="Center" Width="80" IsEnabled="False">
                     <TextBlock TextWrapping="Wrap" FontSize="11" FontWeight="Bold"> Clean</TextBlock>
                 </Button>
                 <Button Name="CloseProgram" Click="CloseProgram_Click" HorizontalAlignment="Right" Width="80" Margin="10">
