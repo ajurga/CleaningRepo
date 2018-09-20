@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Forms;
@@ -27,10 +28,13 @@ namespace CleaningRepo
         HashSet<string> RemovedFiles = new HashSet<string>();
         HashSet<string> unusedFiles = new HashSet<string>();
         HashSet<string> excludedFiles = new HashSet<string>();
+        HashSet<string> suspiciousFiles = new HashSet<string>();
+        Dictionary<string, FilesCounter> log = new Dictionary<string, FilesCounter>();
         string foldersAdded = "";
         int counter = 0;
         int filesPerThread = 10;
-
+        DateTime startTime = DateTime.Now;
+        string repoPath;
         //pobieranie ścieżki do folderu
         public static string ReadFilesFromFolder()
         {
@@ -61,6 +65,9 @@ namespace CleaningRepo
             FilesFromRepository.Clear();
             RemovedFiles.Clear();
             unusedFiles.Clear();
+            suspiciousFiles.Clear();
+            excludedFiles.Clear();
+            log.Clear();
             foldersAdded = null;
             CzyOkProg.Text = foldersAdded;
             CzyOkRepo.Text = "";
@@ -75,9 +82,10 @@ namespace CleaningRepo
 
             if (folder != null)
             {
-                foldersAdded += new DirectoryInfo(folder).Name + "\n";
+                foldersAdded += new DirectoryInfo(folder).Name + " \n";
                 CzyOkProg.Text = foldersAdded;
                 SearchDirs(folder, FilesToFind, false);
+                PrepareLog(log, FilesToFind);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
             }
 
@@ -97,7 +105,7 @@ namespace CleaningRepo
                 string folderName = folderBrowserDialog.SelectedPath;
                 foreach (string s in unusedFiles)
                 {
-                    string targetFolder = folderName+"\\"+ Path.GetFileName(Path.GetDirectoryName(s));
+                    string targetFolder = folderName + "\\" + Path.GetFileName(Path.GetDirectoryName(s));
 
                     if (!System.IO.Directory.Exists(targetFolder))
                     {
@@ -112,11 +120,11 @@ namespace CleaningRepo
 
         private void Repository_Click(object sender, RoutedEventArgs e)
         {
-            string repositoryPath = ReadFilesFromFolder();
-            if (repositoryPath != null)
+            repoPath = ReadFilesFromFolder();
+            if (repoPath != null)
             {
-                CzyOkRepo.Text = repositoryPath;
-                SearchDirs(repositoryPath, FilesFromRepository, false);
+                CzyOkRepo.Text = repoPath;
+                SearchDirs(repoPath, FilesFromRepository, false);
             }
 
             if (FilesFromRepository == null)
@@ -226,14 +234,34 @@ namespace CleaningRepo
                 Title = "Zapisz plik"
             };
             saveFileDialog.ShowDialog();
+
+            List<KeyValuePair<string,FilesCounter>> tmp = log.ToList();
+            tmp.Sort((pair1,pair2)=>pair1.Value.CompareTo(pair2.Value));
             if (saveFileDialog.FileName != "")
             {
+                
                 StreamWriter sw = File.CreateText(saveFileDialog.FileName);
-                foreach (string file in unusedFiles)
+                sw.WriteLine("Start Time: "+ startTime);
+                sw.WriteLine("End Time: "+ DateTime.Now);
+                sw.WriteLine("Files in Repository {0}: "+FilesFromRepository.Count, repoPath);
+                sw.WriteLine("Files searched for: "+FilesToFind.Count);
+                sw.WriteLine("Folders: " + foldersAdded);
+                sw.WriteLine("Unused found: " + unusedFiles.Count);
+                foreach (var kvp in tmp)
                 {
-                    sw.WriteLine(file);
+                    sw.Write(Path.GetFileName(kvp.Key)+" ");
+                    sw.WriteLine(log[kvp.Key]);
                 }
-
+                sw.WriteLine("Suspicious Files:\n"+suspiciousFiles.Count);
+                foreach(string s in suspiciousFiles)
+                {
+                    sw.WriteLine(s);
+                }
+                sw.WriteLine("Excluded Files:\n"+excludedFiles.Count);
+                foreach(string s in excludedFiles)
+                {
+                    sw.WriteLine(s);
+                }
                 sw.Close();
 
             }
@@ -270,16 +298,21 @@ namespace CleaningRepo
             HashSet<string> foundProgs = new HashSet<string>();
             try
             {
+                int cnt = 0;
                 string[] lines = File.ReadAllLines(file);
                 foreach (string line in lines)
                 {
+                    cnt++;
                     bool verifyIfLineHasToBeChecked = isJCL ? !(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID")) : !(line.Length > 6 && line[6] == '*' || line.Contains("PROGRAM-ID"));
                     if (verifyIfLineHasToBeChecked)
                     {
+                        if (!Regex.Match(Path.GetFileName(file), "[A-Z][A-Z].....").Success)
+                            suspiciousFiles.Add(file);
                         for (int i = toCheck.Count - 1; i > 0; i--)
                         {
                             if (line.Contains(Path.GetFileName(toCheck[i])))
                             {
+                                log[toCheck[i]] += Path.GetFileName(file) + " in line "+ cnt +" ,";
                                 unusedFiles.Remove(toCheck[i]);
                             }
                         }
@@ -291,33 +324,49 @@ namespace CleaningRepo
                 throw e;
             }
         }
-
-        //Dictionary<string, string> GetNameVariable(string[] lines)
-        //{
-        //    Dictionary<string, string> NamesOfVariables = new Dictionary<string, string>();
-        //    foreach (string line in lines)
-        //    {
-        //        if (line.Length > 7 && line.Contains("value"))
-        //        {
-        //            //wyszukiwanie nazwy zmiennej
-
-        //            string patternKey = @"[A-Z]+(-[A-Z]+)+";
-        //            string NameVariableKey = Regex.Match(line, patternKey).ToString() ?? null;
-        //            //wyszukiwanie wartości zmiennej, czyli nazwy wywoływanego programu
-        //            string patternValue = "\".......\"";
-        //            string NameVariableValue1 = Regex.Match(line, patternValue).ToString();
-        //            string NameVariableValue = NameVariableValue1.Substring(1, NameVariableValue1.Length - 2);
-        //            //    ////sprawdzanie czy wartość zmiennej może być nazwą programu (zwykle to jest 7 znaków) i dodanie zmiennej wywołującej program do listy
-        //            //    if (NameVariableValue.Length == 7)
-        //            //        NamesOfVariables.Add(NameVariableKey, NameVariableValue);
-        //        }
-        //    }
-        //    return NamesOfVariables;
-        //}
+        
+        private void PrepareLog(Dictionary<string,FilesCounter> Log, HashSet<string> Files)
+        {
+            foreach (string s in Files)
+            {
+                if (!Log.ContainsKey(s)) Log.Add(s, new FilesCounter());
+            }
+        }
 
         private void CloseProgram_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+    }
+
+    class FilesCounter :IComparable
+    {
+        private int occurences = 0;
+        public int Occurences { get { return occurences; } }
+
+        private string foundLocation = "";
+
+        public static FilesCounter operator +(FilesCounter FC, string s)
+        {
+            FC.foundLocation += " " + s;
+            FC.occurences++;
+            return FC;
+        }
+
+        public override string ToString()
+        {
+            return "Occurences:"+ occurences +" "+ foundLocation;
+        }
+
+        public int CompareTo(object obj)
+        {
+            FilesCounter fc = obj as FilesCounter;
+            if (this.occurences < fc.Occurences)
+                return -1;
+            if (this.occurences == fc.Occurences)
+                return 0;
+            else
+                return 1;
         }
     }
 }
