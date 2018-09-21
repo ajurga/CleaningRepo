@@ -84,7 +84,7 @@ namespace CleaningRepo
             {
                 foldersAdded += new DirectoryInfo(folder).Name + " \n";
                 CzyOkProg.Text = foldersAdded;
-                SearchDirs(folder, FilesToFind, false);
+                SearchDirsAndSubDirs(folder, FilesToFind, false);
                 PrepareLog(log, FilesToFind);
                 listViewFind.ItemsSource = DisplayResults(FilesToFind);
             }
@@ -124,7 +124,7 @@ namespace CleaningRepo
             if (repoPath != null)
             {
                 CzyOkRepo.Text = repoPath;
-                SearchDirs(repoPath, FilesFromRepository, false);
+                SearchDirsAndSubDirs(repoPath, FilesFromRepository, false);
             }
 
             if (FilesFromRepository == null)
@@ -132,50 +132,37 @@ namespace CleaningRepo
         }
 
         //tworzy listę programów do wyszukania
-        void SearchDirs(string dirToSearch, HashSet<string> ListOfFile, bool ignoreOnline = true)
+        void SearchDirsAndSubDirs(string dirToSearch, HashSet<string> ListOfFiles, bool ignoreOnline = true)
         {
             try
             {
+                SearchCurDir(dirToSearch, ListOfFiles, ignoreOnline);
                 //jeżeli są podkatalogi to idzie tu:
                 foreach (string d in Directory.GetDirectories(dirToSearch))
                 {
-                    foreach (string f in Directory.GetFiles(d))
-                    {
-                        if (ignoreOnline)
-                        {
-                            string tmpF = Path.GetFileName(f);
-                            if (tmpF.Length < 2 || tmpF[2] == '1' || tmpF[2] == '2')
-                            {
-                                Console.WriteLine("Ignored Online: " + tmpF);
-                                continue;
-                            }
-                        }
-                        ListOfFile.Add(f);
-                    }
-                    SearchDirs(d, ListOfFile, ignoreOnline);
-
-                }
-                //jeżeli nie ma podkatalogów to bierze pliki ze ścieżki
-                if (ListOfFile.Count == 0)
-                {
-                    foreach (string f in Directory.GetFiles(dirToSearch))
-                    {
-                        if (ignoreOnline)
-                        {
-                            string tmpF = System.IO.Path.GetFileName(f);
-                            if (tmpF.Length < 2 || tmpF[2] == '1' || tmpF[2] == '2')
-                            {
-                                Console.WriteLine("Ignored Online: " + tmpF);
-                                continue;
-                            }
-                        }
-                        ListOfFile.Add(f);
-                    }
+                    SearchDirsAndSubDirs(d, ListOfFiles, ignoreOnline);
                 }
             }
             catch (Exception e)
             {
                 throw e;
+            }
+        }
+
+        void SearchCurDir(string dirToSearch, HashSet<string> ListOfFiles, bool ignoreOnline)
+        {
+            foreach (string f in Directory.GetFiles(dirToSearch))
+            {
+                if (ignoreOnline)
+                {
+                    string tmpF = System.IO.Path.GetFileName(f);
+                    if (tmpF.Length < 2 || tmpF[2] == '1' || tmpF[2] == '2')
+                    {
+                        Console.WriteLine("Ignored Online: " + tmpF);
+                        continue;
+                    }
+                }
+                ListOfFiles.Add(f);
             }
         }
 
