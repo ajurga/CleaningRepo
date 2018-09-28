@@ -18,31 +18,31 @@
         </DockPanel>
         <UniformGrid Columns="1" Rows="4" Height="240" Background="#99CCCC">
             <UniformGrid Columns="3" Rows="1">
-                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White" >
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" >
                     Repository path:</TextBlock>
                 <Button Name="Repository" HorizontalAlignment="Center" Width="80" Click="Repository_Click" Height="40">
                     <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Choose  directory</TextBlock>
                 </Button>
-                <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="14" Foreground="Green" Name="CzyOkRepo"></TextBlock>
+                <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Black" Name="CzyOkRepo"></TextBlock>
             </UniformGrid>
             <UniformGrid Columns="3" Rows="1">
-                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White"  >
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11">
                     Search programs path:</TextBlock>
                 <Button Name="ProgramsToFind" Click="ProgramsToFind_Click" HorizontalAlignment="Center" Width="80" Height="40" >
                     <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Choose  directory</TextBlock>
                 </Button>
                 <ScrollViewer>
-                    <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Green" Name="CzyOkProg"></TextBlock>
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Black" Name="CzyOkProg"></TextBlock>
                 </ScrollViewer>
             </UniformGrid>
             <UniformGrid Columns="3" Rows="1">
-                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" Foreground="White"  >
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" FontSize="11" >
                     List of Excluded Transactions/JCL:</TextBlock>
                 <Button Name="AddExcludedFiles" Click="AddExcludedFiles_Click" HorizontalAlignment="Center" Width="80" Height="40" >
                     <TextBlock TextWrapping="Wrap" FontSize="11" TextAlignment="Center">Add file</TextBlock>
                 </Button>
                 <ScrollViewer>
-                    <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Foreground="Green" Name="ExcludedSources"></TextBlock>
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Left" VerticalAlignment="Center" FontSize="10" Name="ExcludedSources"></TextBlock>
                 </ScrollViewer>
             </UniformGrid>
             <UniformGrid Columns="4" Rows="1" HorizontalAlignment="Center" Width="400">
