@@ -93,29 +93,7 @@ namespace CleaningRepo
                 System.Windows.MessageBox.Show("Lista plików do sprawdzenia jest pusta", "Uwaga!");
         }
 
-        private void Clean_Click(object sender, RoutedEventArgs e)
-        {
-            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog()
-            {
-                ShowNewFolderButton = false
-            };
-            DialogResult path = folderBrowserDialog.ShowDialog();
-            if (path == System.Windows.Forms.DialogResult.OK)
-            {
-                string folderName = folderBrowserDialog.SelectedPath;
-                foreach (string s in unusedFiles)
-                {
-                    string targetFolder = folderName + "\\" + Path.GetFileName(Path.GetDirectoryName(s));
-
-                    if (!System.IO.Directory.Exists(targetFolder))
-                    {
-                        System.IO.Directory.CreateDirectory(targetFolder);
-                    }
-                    System.IO.File.Move(s, targetFolder + "\\" + Path.GetFileName(s));
-
-                }
-            }
-        }
+        
 
 
         private void Repository_Click(object sender, RoutedEventArgs e)
@@ -174,14 +152,14 @@ namespace CleaningRepo
                 ExcludedSources.Text += Path.GetFileName(openFileDialog.FileName) + "\n";
                 foreach (string s in File.ReadLines(openFileDialog.FileName))
                 {
-                    string matched = Regex.Match(s, "[A-Z][A-Z][1-2]C...").Value;
-                    if (matched != null)
+                    Match match = Regex.Match(s, "[A-Z][A-Z][1-2]C...");
+                    if (match.Success)
                     {
-                        excludedFiles.Add(matched);
+                        excludedFiles.Add(match.Value);
                     }
-                    matched = Regex.Match(s, "[A-Z][A-Z]J[A-Z]...").Value;
-                    if (matched != null)
-                        excludedFiles.Add(matched);
+                    match = Regex.Match(s, "[A-Z][A-Z]J[A-Z]...");
+                    if (match.Success)
+                        excludedFiles.Add(match.Value);
                 }
             }
         }
