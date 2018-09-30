@@ -93,7 +93,10 @@ namespace CleaningRepo
                 System.Windows.MessageBox.Show("Lista plików do sprawdzenia jest pusta", "Uwaga!");
         }
 
-        
+        private void Clean_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
 
 
         private void Repository_Click(object sender, RoutedEventArgs e)
