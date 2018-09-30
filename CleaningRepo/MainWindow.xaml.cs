@@ -95,7 +95,26 @@ namespace CleaningRepo
 
         private void Clean_Click(object sender, RoutedEventArgs e)
         {
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog()
+            {
+                ShowNewFolderButton = false
+            };
+            DialogResult path = folderBrowserDialog.ShowDialog();
+            if (path == System.Windows.Forms.DialogResult.OK)
+            {
+                string folderName = folderBrowserDialog.SelectedPath;
+                foreach (string s in unusedFiles)
+                {
+                    string targetFolder = folderName + "\\" + Path.GetFileName(Path.GetDirectoryName(s));
 
+                    if (!System.IO.Directory.Exists(targetFolder))
+                    {
+                        System.IO.Directory.CreateDirectory(targetFolder);
+                    }
+                    System.IO.File.Move(s, targetFolder + "\\" + Path.GetFileName(s));
+
+                }
+            }
         }
 
 
